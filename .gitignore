@@ -1,0 +1,36 @@
+# Carpetas de tu proyecto
+chroma/
+engine/chroma/
+
+# Python estándar
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.log
+
+# Entornos virtuales
+.venv/
+venv/
+ENV/
+env/
+.ENV/
+ENV.bak/
+
+# Archivos de configuración de VSCode
+.vscode/
+
+# Archivos de Jupyter
+.ipynb_checkpoints/
+
+# Archivos temporales
+*.tmp
+*.temp
+*.bak
+*.swp
