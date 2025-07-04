@@ -1,0 +1,7 @@
+langchain
+langchain-chroma
+langchain-huggingface
+transformers
+sentence-transformers
+chromadb
+torch
