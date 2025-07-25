@@ -25,7 +25,7 @@ def clean_row(row):
             cleaned[key] = value
     return cleaned
 
-def store_csv_in_chroma(csv_path, chroma_path="chroma"):
+def store_csv_in_chroma(csv_path, chroma_path="chroma/revit"):
     embedding_function = get_embedding_function()
     db = Chroma(persist_directory=chroma_path, embedding_function=embedding_function)
     documents = []

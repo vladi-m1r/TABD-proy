@@ -1,14 +1,12 @@
 import argparse
 from langchain_chroma import Chroma
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.llms.ollama import Ollama
-
 from get_embedding_function import get_embedding_function
 
-from transformers import pipeline
-from langchain_huggingface import HuggingFacePipeline
+from llama_cpp import Llama
 
 CHROMA_PATH = "chroma"
+MODEL_PATH = "../mistral-7b-instruct-v0.2.Q4_K_M.gguf"  # Ajusta la ruta si es necesario
 
 PROMPT_TEMPLATE = """
 Responde la siguiente pregunta usando solo la información del contexto. Sé detallado y explica tu respuesta.
@@ -44,10 +42,10 @@ def query_rag(query_text: str):
     prompt = prompt_template.format(context=context_text, question=query_text)
     print(prompt)
 
-    # model = Ollama(model="mistral")
-    hf_pipe = pipeline("text2text-generation", model="google/flan-t5-base", max_new_tokens=512)
-    model = HuggingFacePipeline(pipeline=hf_pipe)
-    response_text = model.invoke(prompt)
+    # Usar llama_cpp para cargar el modelo GGUF
+    llm = Llama(model_path=MODEL_PATH)
+    respuesta = llm(prompt, max_tokens=512, temperature=0.3)
+    response_text = respuesta["choices"][0]["text"].strip()
 
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
