@@ -87,4 +87,4 @@ async def elementos(request: NormasRequest):
 
     resultados = verificar_normas_por_categoria(categoria=categoria, normas=normas)
 
-    return {"elementos": resultados}
+    return resultados

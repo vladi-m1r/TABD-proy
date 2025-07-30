@@ -1,11 +1,12 @@
 from langchain_chroma import Chroma
 from engine.get_embedding_function import get_embedding_function
-from llama_loader import load_llama_model
 import os
 from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()  # Cargar variables de entorno desde .env
+#model = "llama-3.3-70b-versatile"  # Modelo por defecto
+model = "moonshotai/kimi-k2-instruct"  # Modelo por defecto
 
 client = Groq(
     api_key=os.environ.get("GROQ_API_KEY", "")
@@ -71,51 +72,9 @@ def get_normas_por_categoria(categoria, context="", k=6, chroma_path="chroma/nor
                 "content": "Contexto: " + contexto_unido + f"\n\nInstrucción: A partir del contexto, extrae y lista todas las normas que mencionen metros en la categoria: ${categoria}. Ordénalas de forma lógica, como si fueran parte de una guía de revisión para una inspección técnica en una obra. Devuelve la lista en formato numerado con una breve descripción de cada norma. Se puntual y extrae las mas claras"
             }
         ],
-        #model="llama3-8b-8192",
-        model="llama3-70b-8192",
+        model=model,
     )
     normas = chat_completion.choices[0].message.content.strip().split("\n")
-    return normas
-
-def get_normas_por_categoria_RAG(categoria, context="", k=8, chroma_path="chroma/normas"):
-    """
-    Devuelve un diccionario con las normas de una categoría específica.
-    """
-    embedding_function = get_embedding_function()
-    db = Chroma(persist_directory=chroma_path, embedding_function=embedding_function)
-
-    filter_metadata = {"mencion_metros": True}
-    query = context
-
-    results = db.similarity_search(
-        query=query,
-        k=k,
-        filter=filter_metadata
-    )
-
-    normas = []
-
-    for doc in results:
-        print("Texto:", doc.page_content)
-        print("Metadata:", doc.metadata)
-        print("------")
-
-    contexto_unido = "\n".join([doc.page_content for doc in results])
-
-    # Estructura de prompt tipo instruct
-    prompt = f"""[INST] CONTEXTO:
-    {contexto_unido}
-    Instrucción: A partir del contexto, extrae y lista todas las normas que mencionen metros.
-    Todo en idioma español
-    Ordénalas de forma lógica, como si fueran parte de una guía de revisión para una inspección técnica en una obra.
-    Devuelve la lista en formato numerado con una breve descripción de cada norma. [/INST]
-    """
-
-    # Ejecutar modelo
-    llm = load_llama_model()
-    respuesta = llm(prompt, max_tokens=500, temperature=1.0)
-    print(respuesta["choices"][0]["text"].strip())
-
     return normas
 
 def get_elementos_por_categoria(categoria, chroma_path="chroma/revit"):
@@ -143,30 +102,23 @@ def verificar_normas_por_categoria(categoria, normas):
     for idx, elemento in enumerate(resultados, 1):
         elemento_str = str(elemento)
         prompt = f"""
-        Analiza el siguiente objeto de la categoría '{categoria}':
-        {elemento_str}
+        Actúa como un verificador técnico especializado en normativas de edificación. A continuación, se proporciona una lista de normas técnicas y un conjunto de parámetros de un elemento arquitectónico.
 
-        Verifica el cumplimiento de las siguientes normas:
+        Tu tarea es:
+
+        1. Revisar si cada norma se cumple según los parámetros dados.
+        2. Indicar si la norma se cumple o no se cumple.
+        3. Justificar tu respuesta con base en la comparación directa.
+        4. Si la norma no aplica a los parámetros dados, indícalo.
+        5. Usa una lista enumerada con la evaluación de cada norma.
+
+        ### Normas:
         {normas_texto}
 
-        Se critico y con sentido común.
-        Si alguna norma no aplica, indícalo explícitamente.
-        Para cada norma, responde únicamente con una de las siguientes opciones: 'Cumple', 'No cumple', 'No aplica'.
-        Explica brevemente el motivo de tu respuesta para cada norma.
-
-        Devuelve la respuesta en el siguiente formato estructurado:
-        Elemento: <Nombre del objeto analizado>
-        Cumple:
-          1. <Norma> - <Explicación breve>
-          ...
-        No cumple:
-          1. <Norma> - <Explicación breve>
-          ...
-        No aplica:
-          1. <Norma> - <Explicación breve>
-          ...
-        Si alguna sección no tiene normas, indícalo explícitamente con "Sin normas".
+        ### Parámetros del elemento:
+        {elemento_str}
         """
+
         chat_completion = client.chat.completions.create(
             messages=[
                 {
@@ -174,10 +126,15 @@ def verificar_normas_por_categoria(categoria, normas):
                     "content": prompt
                 }
             ],
-            #model="llama3-8b-8192",
-            model="llama3-70b-8192",
+            model=model,
         )
         resultado = chat_completion.choices[0].message.content.strip()
         print(f"Elemento {idx}\nResultado:\n{resultado}\n---")
-        resultados_finales.append(resultado)
+        nombre_elemento = elemento.get("Elemento", f"elemento_{idx}")
+        id_elemento = elemento.get("ID", f"id_{idx}")
+        resultados_finales.append({
+            "elemento": nombre_elemento,
+            "id": id_elemento,
+            "resultado": resultado
+        })
     return resultados_finales

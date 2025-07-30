@@ -44,7 +44,8 @@ def store_csv_in_chroma(csv_path, chroma_path="chroma/revit"):
                 f"Nivel: {cleaned_row.get('Nivel', '')}, "
                 f"Altura: {cleaned_row.get('Altura desconectada', '')}, "
                 f"Volumen: {cleaned_row.get('Volumen', '')}, "
-                f"Área: {cleaned_row.get('Área', '')}"
+                f"Área: {cleaned_row.get('Área', '')},"
+                f"Id: {cleaned_row.get('ID', '')}"
             )   
             doc = Document(page_content=content, metadata=cleaned_row)
             documents.append(doc)

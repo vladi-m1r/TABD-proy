@@ -21,10 +21,11 @@ def show_all_documents():
         print("="*60)
 
 
-def test_semantic_search(query, k=5):
+def test_semantic_search(query, k=6):
     embedding_function = get_embedding_function()
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
-    results = db.similarity_search_with_score(query, k=k)  # Ensure k is defined
+    results = db.similarity_search_with_score(query, k=k, filter={"mencion_metros": True})  # Ensure k is defined
+    #results = db.max_marginal_relevance_search(query, k=k, fetch_k=k*2, filter={"mencion_metros": True})
     print(f"Resultados para la consulta: '{query}'\n")
     for i, (doc, score) in enumerate(results, 1):
         print(f"--- Resultado {i} (score: {score:.4f}) ---")
@@ -34,6 +35,16 @@ def test_semantic_search(query, k=5):
         print(f"Texto:\n{doc.page_content}\n")
         print(f"Menciona metros: {doc.metadata.get('mencion_metros', False)}")
         print("="*60)
+    """
+    for i, doc in enumerate(results, 1):
+        print(f"--- Resultado {i}) ---")
+        print(f"Source: {doc.metadata.get('source', '')}")
+        print(f"Capítulo: {doc.metadata.get('capitulo', '')}")
+        print(f"Artículo: {doc.metadata.get('articulo', '')}")
+        print(f"Texto:\n{doc.page_content}\n")
+        print(f"Menciona metros: {doc.metadata.get('mencion_metros', False)}")
+        print("="*60)
+    """
 
 if __name__ == "__main__":
     populateDataBase()

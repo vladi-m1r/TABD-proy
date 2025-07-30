@@ -5,4 +5,4 @@ transformers
 sentence-transformers
 chromadb
 torch
-pip install groq
+groq

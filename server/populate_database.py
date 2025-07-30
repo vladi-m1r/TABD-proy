@@ -109,7 +109,8 @@ def split_by_article(document: Document):
     for cap in capitulos:
         cap_match = re.search(r'CAP[IÍ]TULO\s+[IVXLCDM]+', cap, re.IGNORECASE)
         capitulo = cap_match.group(0) if cap_match else ""
-        articulos = re.split(r'(Art[íi]culo\s+\d+\.-)', cap, flags=re.IGNORECASE)
+        # Captura encabezado y nombre del artículo juntos
+        articulos = re.split(r'(Art[íi]culo\s+\d+\.-\s*.*)', cap, flags=re.IGNORECASE)
         for i in range(1, len(articulos), 2):
             encabezado = articulos[i]
             contenido = articulos[i+1] if i+1 < len(articulos) else ""
@@ -118,6 +119,8 @@ def split_by_article(document: Document):
             # Detectar número de artículo
             articulo_num_match = re.search(r'Art[íi]culo\s+(\d+)', articulo, re.IGNORECASE)
             articulo_num = articulo_num_match.group(1) if articulo_num_match else None
+            # Detectar nombre del artículo: todo lo que sigue después de 'Artículo N.-'
+            print(f"Nombre del artículo: {articulo}")
             if articulo_num:
                 # Buscar incisos tipo '5.1', '5.2', '27.3', etc. al inicio de línea, con o sin punto final
                 inciso_regex = rf'^{articulo_num}\.\d+\.?'
@@ -131,10 +134,10 @@ def split_by_article(document: Document):
                         inciso_text = texto_articulo[start:end].strip()
                         inciso_encabezado_match = re.match(inciso_regex, inciso_text)
                         inciso_encabezado = inciso_encabezado_match.group(0) if inciso_encabezado_match else ""
-                        mencion_metros = bool(re.search(r"(\d+(\.\d+)?\s?(m(etro|etros)?))|((metro|metros))", inciso_text, re.IGNORECASE))
+                        mencion_metros = bool(re.search(r"(\d+(\.\d+)?\s*[\n\r]?\s*(m(etro|etros)?))|((metro|metros))", inciso_text, re.IGNORECASE | re.MULTILINE))
                         tabla = contiene_tabla(inciso_text)
                         tabla_texto = ""
-                        texto_final = inciso_text
+                        texto_final = articulo + "\n" + inciso_text
                         if tabla:
                             lineas = inciso_text.splitlines()
                             filas_tabla = [l for l in lineas if '\t' in l or l.count('  ') > 2]
@@ -155,10 +158,10 @@ def split_by_article(document: Document):
                         docs.append(Document(page_content=texto_final, metadata=metadata))
                     continue  # Ya procesamos los incisos, no guardar el artículo completo
             # Si no hay incisos, guarda el artículo completo como antes
-            mencion_metros = bool(re.search(r"(\d+(\.\d+)?\s?(m(etro|etros)?))|((metro|metros))", texto_articulo, re.IGNORECASE))
+            mencion_metros = bool(re.search(r"(\d+(\.\d+)?\s*[\n\r]?\s*(m(etro|etros)?))|((metro|metros))", texto_articulo, re.IGNORECASE | re.MULTILINE))
             tabla = contiene_tabla(texto_articulo)
             tabla_texto = ""
-            texto_final = texto_articulo
+            texto_final = articulo + "\n" + texto_articulo
             if tabla:
                 lineas = texto_articulo.splitlines()
                 filas_tabla = [l for l in lineas if '\t' in l or l.count('  ') > 2]
